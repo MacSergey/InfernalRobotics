@@ -82,6 +82,11 @@ namespace InfernalRobotics_v3.Command
 			get { return servos; }
 		}
 
+		public bool Contains(IServo servo)
+		{
+			return servos.Contains(servo);
+		}
+
 		public void AddControl(IServo servo, int index)
 		{
 			if(servos.Contains(servo))

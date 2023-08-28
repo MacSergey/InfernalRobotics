@@ -80,7 +80,7 @@ namespace InfernalRobotics_v3.Command
 				{
 					if(groups.Contains(cg.Name))
 					{
-						cg.AddControl(servo, -1); // FEHLER, Index noch irgendwie behalten... ist ja lächerlich, dass wir das nicht können
+						cg.AddControl(servo, -1); // FEHLER, Index noch irgendwie behalten...
 						groups.Remove(cg.Name);
 					}
 				}
@@ -136,70 +136,6 @@ namespace InfernalRobotics_v3.Command
 			Logger.Log("[ServoController] AddServo finished successfully", Logger.Level.Debug);
 		}
 
-		private void OnEditorPartAttach(GameEvents.HostTargetAction<Part, Part> hostTarget)
-		{
-			Part part = hostTarget.host;
-
-			foreach(var p in part.GetChildServos())
-				EditorAddServo(p);
-
-			Logger.Log("[ServoController] OnPartAttach finished successfully", Logger.Level.Debug);
-		}
-
-		private void OnEditorPartRemove(GameEvents.HostTargetAction<Part, Part> hostTarget)
-		{
-			Part part = hostTarget.target;
-
-			foreach(var p in part.GetChildServos())
-				EditorRemoveServo(p);
-
-			Logger.Log("[ServoController] OnPartRemove finished successfully", Logger.Level.Debug);
-		}
-
-		private void OnEditorUnOrRedo(ShipConstruct ship)
-		{
-			if(!Instance)
-				return;
-
-			if(Instance.ServoGroups == null)
-				return;
-
-			List<ModuleIRServo_v3> allServos = new List<ModuleIRServo_v3>();
-
-			foreach(Part p in ship.parts)
-			{
-				ModuleIRServo_v3 servo = p.GetComponent<ModuleIRServo_v3>();
-
-				if(servo != null)
-					allServos.Add(servo);
-			}
-
-			HashSet<ModuleIRServo_v3> servosNotToAdd = new HashSet<ModuleIRServo_v3>();
-			HashSet<ModuleIRServo_v3> servosToRemove = new HashSet<ModuleIRServo_v3>();
-
-			for(int i = 0; i < Instance.ServoGroups.Count; i++)
-			{
-				for(int j = 0; j < Instance.ServoGroups[i].Servos.Count; j++)
-				{
-					ModuleIRServo_v3 servo = (ModuleIRServo_v3)Instance.ServoGroups[i].Servos[j].servo;
-
-					if(allServos.Contains(servo))
-						servosNotToAdd.Add(servo);
-					else
-						servosToRemove.Add(servo);
-				}
-			}
-
-			foreach(ModuleIRServo_v3 servo in servosToRemove)
-				EditorRemoveServo(servo);
-
-			foreach(ModuleIRServo_v3 servo in allServos)
-			{
-				if(!servosNotToAdd.Contains(servo))
-					EditorAddServo(servo);
-			}
-		}
-
 		// internal (not private) because we need to call it from "ModuleIRServo_v3.RemoveFromSymmetry2"
 		internal void RebuildServoGroupsEditor(ShipConstruct ship = null)
 		{
@@ -241,6 +177,8 @@ namespace InfernalRobotics_v3.Command
 						}
 					}
 				}
+
+				// re-use existing groups
 
 				for(int j = 0; j < oldServoGroups.Count; j++)
 				{
@@ -288,7 +226,7 @@ namespace InfernalRobotics_v3.Command
 				Gui.WindowManager.Instance.Invalidate();
 		}
 	   
-		private void OnEditorRestart()
+		private void OnEditorStarted()
 		{
 			ServoGroups = null;
 			servosState = null;
@@ -299,7 +237,7 @@ namespace InfernalRobotics_v3.Command
 			if(Gui.IRBuildAid.IRBuildAidManager.Instance)
 				Gui.IRBuildAid.IRBuildAidManager.Reset();
 
-			Logger.Log ("OnEditorRestart called", Logger.Level.Debug);
+			Logger.Log ("OnEditorStarted called", Logger.Level.Debug);
 		}
 
 		private void OnEditorLoad(ShipConstruct s, KSP.UI.Screens.CraftBrowserDialog.LoadType t)
@@ -324,8 +262,7 @@ namespace InfernalRobotics_v3.Command
 		internal IEnumerator _RebuildServoGroupsFlight()
 		{
 			yield return new WaitForFixedUpdate();
-			yield return new WaitForFixedUpdate();
-// FEHLER, temp, mal ein Versuch -> ginge evtl. auch mir nur einem
+			yield return new WaitForFixedUpdate(); // would most likely also work with just one WaitForFixedUpdate but it doesn't hurt to wait longer
 
 			Dictionary<IServo, IServoState> oldServoState = (Instance.servosState != null) ? Instance.servosState : new Dictionary<IServo, IServoState>();
 			servosState = new Dictionary<IServo, IServoState>();
@@ -339,8 +276,6 @@ namespace InfernalRobotics_v3.Command
 
 				if(!vessel.loaded)
 					continue;
-
-// FEHLER, ganz neue Idee, weil das hier alles Oberscheisse ist -> das hier im Editor-Teil auch so machen, wenn's klappt... sonst haut's immer alles raus, was noch gut ist		
 
 				var groupServos = new Dictionary<string, List<IServo>>();
 
@@ -421,6 +356,80 @@ namespace InfernalRobotics_v3.Command
 				Gui.WindowManager.Instance.Invalidate();
 		}
 
+		private void OnEditorPartAttach(Part part)
+		{
+			foreach(var p in part.GetChildServos())
+				EditorAddServo(p);
+
+			Logger.Log("[ServoController] OnPartAttach finished successfully", Logger.Level.Debug);
+		}
+
+		private void OnEditorPartRemove(Part part)
+		{
+			foreach(var p in part.GetChildServos())
+				EditorRemoveServo(p);
+
+			Logger.Log("[ServoController] OnPartRemove finished successfully", Logger.Level.Debug);
+		}
+
+		public void OnEditorPartEvent(ConstructionEventType evt, Part part)
+		{
+			switch(evt)
+			{
+			case ConstructionEventType.PartAttached:
+				OnEditorPartAttach(part);
+				break;
+
+			case ConstructionEventType.PartDetached:
+				OnEditorPartRemove(part);
+				break;
+			}
+		}
+
+		private void OnEditorUnOrRedo(ShipConstruct ship)
+		{
+			if(!Instance)
+				return;
+
+			if(Instance.ServoGroups == null)
+				return;
+
+			List<ModuleIRServo_v3> allServos = new List<ModuleIRServo_v3>();
+
+			foreach(Part p in ship.parts)
+			{
+				ModuleIRServo_v3 servo = p.GetComponent<ModuleIRServo_v3>();
+
+				if(servo != null)
+					allServos.Add(servo);
+			}
+
+			HashSet<ModuleIRServo_v3> servosNotToAdd = new HashSet<ModuleIRServo_v3>();
+			HashSet<ModuleIRServo_v3> servosToRemove = new HashSet<ModuleIRServo_v3>();
+
+			for(int i = 0; i < Instance.ServoGroups.Count; i++)
+			{
+				for(int j = 0; j < Instance.ServoGroups[i].Servos.Count; j++)
+				{
+					ModuleIRServo_v3 servo = (ModuleIRServo_v3)Instance.ServoGroups[i].Servos[j].servo;
+
+					if(allServos.Contains(servo))
+						servosNotToAdd.Add(servo);
+					else
+						servosToRemove.Add(servo);
+				}
+			}
+
+			foreach(ModuleIRServo_v3 servo in servosToRemove)
+				EditorRemoveServo(servo);
+
+			foreach(ModuleIRServo_v3 servo in allServos)
+			{
+				if(!servosNotToAdd.Contains(servo))
+					EditorAddServo(servo);
+			}
+		}
+
 		private void OnVesselChange(Vessel v)
 		{
 			Logger.Log(string.Format("[ServoController] vessel {0}", v.name));
@@ -464,12 +473,12 @@ namespace InfernalRobotics_v3.Command
 			}
 			else if(HighLogic.LoadedSceneIsEditor)
 			{
-				GameEvents.onPartAttach.Add(OnEditorPartAttach);
-				GameEvents.onPartRemove.Add(OnEditorPartRemove);
+				GameEvents.onEditorStarted.Add(OnEditorStarted);
+				GameEvents.onEditorLoad.Add(OnEditorLoad);
+				GameEvents.onEditorPartEvent.Add(OnEditorPartEvent);
 				GameEvents.onEditorUndo.Add(OnEditorUnOrRedo);
 				GameEvents.onEditorRedo.Add(OnEditorUnOrRedo);
-				GameEvents.onEditorLoad.Add(OnEditorLoad);
-				GameEvents.onEditorRestart.Add(OnEditorRestart);
+
 				ControllerInstance = this;
 			}
 			else
@@ -509,12 +518,11 @@ namespace InfernalRobotics_v3.Command
 			GameEvents.onVesselDestroy.Remove(OnVesselUnloaded);
 			GameEvents.onVesselGoOnRails.Remove(OnVesselUnloaded);
 
-			GameEvents.onPartAttach.Remove(OnEditorPartAttach);
-			GameEvents.onPartRemove.Remove(OnEditorPartRemove);
+			GameEvents.onEditorStarted.Remove(OnEditorStarted);
+			GameEvents.onEditorLoad.Remove(OnEditorLoad);
+			GameEvents.onEditorPartEvent.Remove(OnEditorPartEvent);
 			GameEvents.onEditorUndo.Remove(OnEditorUnOrRedo);
 			GameEvents.onEditorRedo.Remove(OnEditorUnOrRedo);
-			GameEvents.onEditorLoad.Remove(OnEditorLoad);
-			GameEvents.onEditorRestart.Remove(OnEditorRestart);
 
 			Logger.Log("[ServoController] OnDestroy finished successfully", Logger.Level.Debug);
 		}
@@ -595,29 +603,38 @@ namespace InfernalRobotics_v3.Command
 
 	public class ModuleIRController
 	{
-		public static void OnSave(ConfigNode config)
+		public static void OnSave(ConfigNode config, Part p)
 		{
 			if((Controller.Instance == null) || (Controller.Instance.ServoGroups == null))
 				return;
 
+			IServo s = p.GetComponent<ModuleIRServo_v3>();
+
 			config = config.AddNode("IRControllerData");
 
-			config.AddValue("Groups", Controller.Instance.ServoGroups.Count);
+			int Count = 0;
 
 			for(int i = 0; i < Controller.Instance.ServoGroups.Count; i++)
 			{
-				ConfigNode groupNode = config.AddNode("Group" + i);
+				if(((ServoGroup)Controller.Instance.ServoGroups[i]).Contains(s))
+				{
+					ConfigNode groupNode = config.AddNode("Group" + Count);
 
-				groupNode.AddValue("Name", Controller.Instance.ServoGroups[i].Name);
-				if(Controller.Instance.ServoGroups[i].ForwardKey.Length > 0)
-					groupNode.AddValue("ForwardKey", Controller.Instance.ServoGroups[i].ForwardKey);
-				if(Controller.Instance.ServoGroups[i].ReverseKey.Length > 0)
-					groupNode.AddValue("ReverseKey", Controller.Instance.ServoGroups[i].ReverseKey);
-				groupNode.AddValue("GroupSpeedFactor", Controller.Instance.ServoGroups[i].GroupSpeedFactor);
+					groupNode.AddValue("Name", Controller.Instance.ServoGroups[i].Name);
+					if(Controller.Instance.ServoGroups[i].ForwardKey.Length > 0)
+						groupNode.AddValue("ForwardKey", Controller.Instance.ServoGroups[i].ForwardKey);
+					if(Controller.Instance.ServoGroups[i].ReverseKey.Length > 0)
+						groupNode.AddValue("ReverseKey", Controller.Instance.ServoGroups[i].ReverseKey);
+					groupNode.AddValue("GroupSpeedFactor", Controller.Instance.ServoGroups[i].GroupSpeedFactor);
+
+					++Count;
+				}
 			}
+
+			config.AddValue("Groups", Count);
 		}
 
-		public static void OnLoad(ConfigNode config, Vessel v)
+		public static void OnLoad(ConfigNode config, Part p)
 		{
 			config = config.GetNode("IRControllerData");
 
@@ -627,7 +644,8 @@ namespace InfernalRobotics_v3.Command
 			if(Controller.Instance.ServoGroups == null)
 				Controller.Instance.ServoGroups = new List<IServoGroup>();
 
-			Controller.Instance.ServoGroups.Clear();
+			if(HighLogic.LoadedSceneIsFlight) // in EditorMode we do this in OnEditorStarted -> we have a load for every sub assembly there
+				Controller.Instance.ServoGroups.Clear();
 
 			int Count = int.Parse(config.GetValue("Groups"));
 
@@ -635,10 +653,20 @@ namespace InfernalRobotics_v3.Command
 			{
 				ConfigNode groupNode = config.GetNode("Group" + i);
 
+				string name = groupNode.GetValue("Name");
+
+				int j = 0;
+				while((j < Controller.Instance.ServoGroups.Count)
+				   && (Controller.Instance.ServoGroups[j].Name.CompareTo(name) != 0))
+					++j;
+
+				if(j >= Controller.Instance.ServoGroups.Count)
+					continue; // already found
+
 				ServoGroup g;
 
-				if(v != null)
-					g = new ServoGroup(v, groupNode.GetValue("Name"));
+				if((p != null) && (p.vessel != null))
+					g = new ServoGroup(p.vessel, groupNode.GetValue("Name"));
 				else
 					g = new ServoGroup(groupNode.GetValue("Name"));
 

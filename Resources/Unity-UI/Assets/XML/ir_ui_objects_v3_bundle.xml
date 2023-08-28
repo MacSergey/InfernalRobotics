@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<KSPBundleDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" UrlName="ir_ui_objects_v3" Name="ir_ui_objects_v3" CreatedTime="-8585231647868442229" AutoLoad="false">
+<KSPBundleDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" UrlName="ir_ui_objects_v3" Name="ir_ui_objects_v3" CreatedTime="-8585103614820531789" AutoLoad="false">
   <Author />
   <Info />
   <Assets>
@@ -44,6 +44,7 @@
     <Asset Name="trash" Path="Assets/Images/Icons/trash.png" Type="Texture2D" Url="Images/Icons/trash" AutoLoad="false" />
     <Asset Name="unlocked" Path="Assets/Images/Icons/unlocked.png" Type="Texture2D" Url="Images/Icons/unlocked" AutoLoad="false" />
     <Asset Name="up" Path="Assets/Images/Icons/up.png" Type="Texture2D" Url="Images/Icons/up" AutoLoad="false" />
+    <Asset Name="visible" Path="Assets/Images/Icons/visible.png" Type="Texture2D" Url="Images/Icons/visible" AutoLoad="false" />
     <Asset Name="IRWindowBG" Path="Assets/Images/IRWindowBG.png" Type="Texture2D" Url="Images/IRWindowBG" AutoLoad="false" />
     <Asset Name="IRWindowBlank" Path="Assets/Images/IRWindowBlank.png" Type="Texture2D" Url="Images/IRWindowBlank" AutoLoad="false" />
     <Asset Name="IRWindowBox" Path="Assets/Images/IRWindowBox.png" Type="Texture2D" Url="Images/IRWindowBox" AutoLoad="false" />

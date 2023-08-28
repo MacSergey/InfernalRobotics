@@ -319,28 +319,22 @@ void check(Part p)
 
 		void CalculateNeutralRotation(Part part, ref Quaternion localRotation, ref AttachNode attachNode)
 		{
-			if(part.parent)
-			{
-				ModuleIRServo_v3 s = part.GetComponent<ModuleIRServo_v3>();
+			ModuleIRServo_v3 s = part.GetComponent<ModuleIRServo_v3>();
 
-				if(s)
-				{
-					localRotation = s.CalculateNeutralRotation(localRotation);
-					s._RotateBack(attachNode);
-				}
+			if(s)
+			{
+				localRotation = s.CalculateNeutralRotation(localRotation);
+				s._RotateBack(attachNode);
 			}
 		}
 
 		void CalculateFinalRotation(Part symmetryPart, ref Quaternion localRotation)
 		{
-			if(symmetryPart.parent)
-			{
-				ModuleIRServo_v3 s = symmetryPart.GetComponent<ModuleIRServo_v3>();
+			ModuleIRServo_v3 s = symmetryPart.GetComponent<ModuleIRServo_v3>();
 
-				if(s)
-				{
-					localRotation = s.CalculateFinalRotation(localRotation);
-				}
+			if(s)
+			{
+				localRotation = s.CalculateFinalRotation(localRotation);
 			}
 		}
 
@@ -367,6 +361,13 @@ void check(Part p)
 			}
 		}
 
+		/*
+		 * Remarks:
+		 *		If the parent of the part is null, we are in a "dragging". Then the part has been detached
+		 *		and thus the detach-code of the ModuleIRServo did run. This means that the part is rotated
+		 *		in a non usual way. If this is the case, we need to run special calculations.
+		*/
+
 		public void RestoreMirroringIR(Part part, Part mirrorRoot,
 			Vector3 parentPosition, Quaternion parentRotation,
 			Vector3 symmetryParentPosition, Quaternion symmetryParentRotation)
@@ -380,6 +381,26 @@ void check(Part p)
 
 			Quaternion localRotation = part.transform.localRotation;
 			AttachNode attachNode = m.attachNodeUsed;
+
+			Vector3 symmetryPosition_extra = Vector3.zero;
+			Quaternion symmetryRotation_extra = Quaternion.identity;
+
+			if(!part.parent)
+			{
+				// mirror the part unrotated
+				Vector3 position_e = parentPosition + parentRotation * part.transform.localPosition;
+				Quaternion rotation_e = parentRotation * localRotation;
+
+				Vector3 symmetryPosition_e; Quaternion symmetryRotation_e;
+
+				CalculateMirroredPositionAndRotation(part, mirrorRoot, position_e, rotation_e, attachNode, out symmetryPosition_e, out symmetryRotation_e);
+
+				symmetryPosition_e = Quaternion.Inverse(symmetryParentRotation) * (symmetryPosition_e - symmetryParentPosition);
+				symmetryRotation_e = Quaternion.Inverse(symmetryParentRotation) * symmetryRotation_e;
+
+				symmetryPosition_extra = symmetryPosition_e;
+				symmetryRotation_extra = symmetryRotation_e;
+			}
 
 			// calculate unrotated position and rotation
 			if(bIsIR)
@@ -401,8 +422,17 @@ void check(Part p)
 			symmetryRotation = Quaternion.Inverse(symmetryParentRotation) * symmetryRotation;
 
 			// calculate rotated position and rotation
-			if(IsIR(part))
+			if(bIsIR)
 				CalculateFinalRotation(part.symmetryCounterparts[0], ref symmetryRotation);
+
+			if(!part.parent)
+			{
+				_symmetryParentPosition += symmetryPosition_extra - symmetryPosition;
+				_symmetryParentRotation = _symmetryParentRotation * (Quaternion.Inverse(symmetryRotation) * symmetryRotation_extra);
+
+				symmetryPosition = symmetryPosition_extra;
+				symmetryRotation = symmetryRotation_extra;
+			}
 
 			Set(part.symmetryCounterparts[0], symmetryPosition, symmetryRotation);
 

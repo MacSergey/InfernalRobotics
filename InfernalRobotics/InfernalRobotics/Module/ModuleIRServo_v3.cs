@@ -487,7 +487,7 @@ namespace InfernalRobotics_v3.Module
 
 		public override void OnSave(ConfigNode config)
 		{
-			ModuleIRController.OnSave(config);
+			ModuleIRController.OnSave(config, part);
 
 			base.OnSave(config);
 
@@ -496,7 +496,7 @@ namespace InfernalRobotics_v3.Module
 
 		public override void OnLoad(ConfigNode config)
 		{
-			ModuleIRController.OnLoad(config, part.vessel);
+			ModuleIRController.OnLoad(config, part);
 
 			base.OnLoad(config);
 

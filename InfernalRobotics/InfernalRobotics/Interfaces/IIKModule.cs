@@ -18,6 +18,9 @@ namespace InfernalRobotics_v3.Interfaces
 
 		void SelectEndEffector(Interfaces.IServoGroup g);
 
+		void SetShowPosition(Interfaces.IServoGroup g, bool show);
+		bool GetShowPosition(Interfaces.IServoGroup g);
+
 		void Action1(Interfaces.IServoGroup g);
 		void Action2(Interfaces.IServoGroup g);
 	}

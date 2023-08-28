@@ -404,6 +404,13 @@ namespace InfernalRobotics_v3.Gui
 			var ikEndEffectorButton = hlg.GetChild("IKEndEffectorButton").GetComponent<Button>();
 			ikEndEffectorButton.onClick.AddListener(() => { Controller._IKModule.SelectEndEffector(g.group); });
 
+			var ikPositionVisibleButton = hlg.GetChild("IKPositionVisibleButton");
+			var ikPositionVisibleToggle = ikPositionVisibleButton.GetComponent<Toggle>();
+			if(Controller._IKModule != null)
+				ikPositionVisibleToggle.isOn = Controller._IKModule.GetShowPosition(g.group);
+			ikPositionVisibleToggle.onValueChanged.AddListener(v =>
+				{ Controller._IKModule.SetShowPosition(g.group, v); });
+
 			var ikAction1Button = hlg.GetChild("IKAction1Button").GetComponent<Button>();
 			ikAction1Button.onClick.AddListener(() => { Controller._IKModule.Action1(g.group); });
 
@@ -488,6 +495,7 @@ namespace InfernalRobotics_v3.Gui
 			hlg.GetChild("IKLimiterButton").SetActive(active);
 			hlg.GetChild("IKDirectModeButton").SetActive(active);
 			hlg.GetChild("IKEndEffectorButton").SetActive(active);
+			hlg.GetChild("IKPositionVisibleButton").SetActive(active);
 			hlg.GetChild("IKAction1Button").SetActive(active);
 			hlg.GetChild("IKAction2Button").SetActive(active);
 		}
