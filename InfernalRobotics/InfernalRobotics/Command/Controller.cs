@@ -177,43 +177,43 @@ namespace InfernalRobotics_v3.Command
 						}
 					}
 				}
+			}
 
-				// re-use existing groups
+			// re-use existing groups
 
-				for(int j = 0; j < oldServoGroups.Count; j++)
+			for(int j = 0; j < oldServoGroups.Count; j++)
+			{
+				ServoGroup g = (ServoGroup)oldServoGroups[j];
+
+				List<IServo> servosNew;
+				if(groupServos.TryGetValue(g.Name, out servosNew))
 				{
-					ServoGroup g = (ServoGroup)oldServoGroups[j];
-
-					List<IServo> servosNew;
-					if(groupServos.TryGetValue(g.Name, out servosNew))
+					foreach(IServo s in g.Servos)
 					{
-						foreach(IServo s in g.Servos)
-						{
-							if(!servosNew.Contains(s))
-								g.RemoveControl(s);
-						}
-
-						foreach(IServo s in servosNew)
-							g.AddControl(s, -1);
-
-						ServoGroups.Add(g);
-
-						groupServos.Remove(g.Name);
+						if(!servosNew.Contains(s))
+							g.RemoveControl(s);
 					}
 
-					oldServoGroups.RemoveAt(j--);
-				}
+					foreach(IServo s in servosNew)
+						g.AddControl(s, -1);
 
-				// add new groups
-
-				foreach(var kv in groupServos)
-				{
-					ServoGroup g = new ServoGroup((string)kv.Key);
 					ServoGroups.Add(g);
 
-					foreach(IServo s in kv.Value)
-						g.AddControl(s, -1);
+					groupServos.Remove(g.Name);
 				}
+
+				oldServoGroups.RemoveAt(j--);
+			}
+
+			// add new groups
+
+			foreach(var kv in groupServos)
+			{
+				ServoGroup g = new ServoGroup((string)kv.Key);
+				ServoGroups.Add(g);
+
+				foreach(IServo s in kv.Value)
+					g.AddControl(s, -1);
 			}
 
 			if(ServoGroups.Count == 0)
