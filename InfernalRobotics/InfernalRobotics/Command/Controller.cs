@@ -644,41 +644,34 @@ namespace InfernalRobotics_v3.Command
 			if(Controller.Instance.ServoGroups == null)
 				Controller.Instance.ServoGroups = new List<IServoGroup>();
 
-			if(HighLogic.LoadedSceneIsFlight) // in EditorMode we do this in OnEditorStarted -> we have a load for every sub assembly there
-				Controller.Instance.ServoGroups.Clear();
+            //if (HighLogic.LoadedSceneIsFlight) // in EditorMode we do this in OnEditorStarted -> we have a load for every sub assembly there
+            //    Controller.Instance.ServoGroups.Clear();
+            int Count = int.Parse(config.GetValue("Groups"));
 
-			int Count = int.Parse(config.GetValue("Groups"));
-
-			for(int i = 0; i < Count; i++)
+			for (int i = 0; i < Count; i++)
 			{
 				ConfigNode groupNode = config.GetNode("Group" + i);
 
 				string name = groupNode.GetValue("Name");
 
-				int j = 0;
-				while((j < Controller.Instance.ServoGroups.Count)
-				   && (Controller.Instance.ServoGroups[j].Name.CompareTo(name) != 0))
-					++j;
+                IServoGroup group = Controller.Instance.ServoGroups.FirstOrDefault(g => g.Vessel == p.vessel && g.Name == name);
+				if (group == null)
+				{
+					if ((p != null) && (p.vessel != null))
+						group = new ServoGroup(p.vessel, groupNode.GetValue("Name"));
+					else
+						group = new ServoGroup(groupNode.GetValue("Name"));
 
-				if(j >= Controller.Instance.ServoGroups.Count)
-					continue; // already found
-
-				ServoGroup g;
-
-				if((p != null) && (p.vessel != null))
-					g = new ServoGroup(p.vessel, groupNode.GetValue("Name"));
-				else
-					g = new ServoGroup(groupNode.GetValue("Name"));
+                    Controller.Instance.ServoGroups.Add(group);
+                }
 
 				string forwardKey = groupNode.GetValue("ForwardKey");
-				if(forwardKey != null)
-					g.ForwardKey = forwardKey;
+				if (forwardKey != null)
+                    group.ForwardKey = forwardKey;
 				string reverseKey = groupNode.GetValue("ReverseKey");
-				if(reverseKey != null)
-					g.ReverseKey = reverseKey;
-				g.GroupSpeedFactor = float.Parse(groupNode.GetValue("GroupSpeedFactor"));
-
-				Controller.Instance.ServoGroups.Add(g);
+				if (reverseKey != null)
+                    group.ReverseKey = reverseKey;
+                group.GroupSpeedFactor = float.Parse(groupNode.GetValue("GroupSpeedFactor"));
 			}
 		}
 	}
